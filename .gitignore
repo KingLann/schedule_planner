@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.spec.bak
+
+# PyInstaller
+*.exe
+
+# Database (local dev copy)
+schedule.db
+schedule.db-wal
+schedule.db-shm
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Claude Code
+.claude/
+
+# Export samples (optional, remove this line if you want to track them)
+# Export/
