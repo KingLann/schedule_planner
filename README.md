@@ -51,7 +51,13 @@
 └── src/images/bg.ico      # 应用图标
 ```
 
-## 快速开始
+## 下载安装
+
+前往 [Releases](https://github.com/KingLann/schedule_planner/releases) 下载最新版本的 `SchedulePlanner.exe`，双击即可运行，无需安装 Python 环境。
+
+> 仅支持 Windows 10/11 系统
+
+## 快速开始（从源码运行）
 
 ### 环境要求
 
@@ -88,6 +94,52 @@ pyinstaller SchedulePlanner.spec
 ## 导出格式
 
 支持将数据导出为 Excel (.xlsx) 和 SQL 文件，方便备份和迁移。
+
+## 页面预览
+
+日程管理：
+
+![image-20260523160956433](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231610572.png)
+
+每日任务：
+
+![image-20260523161132195](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231611305.png)
+
+打卡追踪：
+
+![image-20260523161144752](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231611837.png)
+
+整体态势：
+
+![image-20260523161217877](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231612978.png)
+
+数据统计：
+
+![image-20260523161240733](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231612805.png)
+
+我的日记：
+
+![image-20260523161318140](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231613217.png)
+
+系统设置：
+
+![image-20260523161338907](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231613004.png)
+
+![image-20260523161400168](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231614237.png)
+
+![image-20260523161425600](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231614676.png)
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## License
 
