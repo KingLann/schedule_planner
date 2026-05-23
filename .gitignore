@@ -25,5 +25,5 @@ Desktop.ini
 # Claude Code
 .claude/
 
-# Export samples (optional, remove this line if you want to track them)
-# Export/
+# Export (personal data)
+Export/
