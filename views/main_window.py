@@ -19,6 +19,7 @@ NAV_ITEMS = [
     ("✓", "打卡追踪", "checkin"),
     ("◎", "整体态势", "all_tasks"),
     ("📈", "数据统计", "stats"),
+    ("⏳", "拖延统计", "procrastination"),
     ("✎", "我的日记", "diary"),
     ("★", "系统设置", "settings"),
 ]
@@ -440,6 +441,9 @@ class MainWindow:
         elif key == "stats":
             from views.stats_view import StatsView
             return StatsView(self.content_frame, theme=THEME)
+        elif key == "procrastination":
+            from views.procrastination_view import ProcrastinationView
+            return ProcrastinationView(self.content_frame, theme=THEME)
         elif key == "diary":
             from views.diary_view import DiaryView
             return DiaryView(self.content_frame, theme=THEME)

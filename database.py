@@ -100,11 +100,22 @@ def init_db():
         for ddl in [
             "ALTER TABLE schedules ADD COLUMN sort_order INTEGER DEFAULT 0",
             "ALTER TABLE checkins ADD COLUMN sort_order INTEGER DEFAULT 0",
+            "ALTER TABLE schedules ADD COLUMN completed_at TEXT DEFAULT NULL",
+            "ALTER TABLE daily_tasks ADD COLUMN completed_at TEXT DEFAULT NULL",
+            "ALTER TABLE daily_tasks ADD COLUMN updated_at TEXT DEFAULT NULL",
         ]:
             try:
                 conn.execute(ddl)
+                conn.commit()
             except sqlite3.OperationalError:
+                conn.rollback()
                 pass
+        # 回填 daily_tasks.updated_at（旧数据为 NULL）
+        try:
+            conn.execute("UPDATE daily_tasks SET updated_at = created_at WHERE updated_at IS NULL")
+            conn.commit()
+        except Exception:
+            conn.rollback()
         # 索引
         conn.executescript("""
             CREATE INDEX IF NOT EXISTS idx_schedules_date ON schedules(schedule_date);
@@ -167,7 +178,9 @@ class ScheduleDB:
     def toggle_done(sid):
         with _db() as conn:
             conn.execute(
-                "UPDATE schedules SET is_done = 1 - is_done, updated_at=datetime('now','localtime') WHERE id=?",
+                "UPDATE schedules SET is_done = 1 - is_done, "
+                "completed_at = CASE WHEN is_done = 0 THEN datetime('now','localtime') ELSE NULL END, "
+                "updated_at = datetime('now','localtime') WHERE id=?",
                 (sid,)
             )
 
@@ -243,6 +256,61 @@ class ScheduleDB:
         with _db() as conn:
             conn.execute("DELETE FROM schedules")
 
+    # --- 拖延统计查询 ---
+
+    @staticmethod
+    def get_overdue(start_date, end_date):
+        """查询指定日期范围内到期未完成的日程"""
+        with _db() as conn:
+            return conn.execute(
+                "SELECT * FROM schedules WHERE schedule_date BETWEEN ? AND ? AND is_done=0 "
+                "AND schedule_date < date('now') ORDER BY schedule_date",
+                (start_date, end_date)
+            ).fetchall()
+
+    @staticmethod
+    def get_postponed():
+        """查询被推迟到未来的日程（创建超过1天、日期在未来、未完成、且被编辑过）"""
+        with _db() as conn:
+            return conn.execute(
+                "SELECT * FROM schedules WHERE schedule_date >= date('now') AND is_done=0 "
+                "AND created_at < datetime('now', '-1 day', 'localtime') "
+                "AND updated_at > created_at ORDER BY schedule_date"
+            ).fetchall()
+
+    @staticmethod
+    def get_overdue_grouped_by_date(start_date, end_date):
+        """按日期分组统计到期未完成数，返回 [(date, count), ...]"""
+        with _db() as conn:
+            return conn.execute(
+                "SELECT schedule_date as d, COUNT(*) as c FROM schedules "
+                "WHERE schedule_date BETWEEN ? AND ? AND is_done=0 AND schedule_date < date('now') "
+                "GROUP BY schedule_date ORDER BY schedule_date",
+                (start_date, end_date)
+            ).fetchall()
+
+    @staticmethod
+    def get_overdue_grouped_by_weekday(start_date, end_date):
+        """按星期几分组统计拖延数，返回 [(weekday(0=Mon), count), ...]"""
+        with _db() as conn:
+            return conn.execute(
+                "SELECT CAST(strftime('%w', schedule_date) AS INTEGER) as wd, COUNT(*) as c "
+                "FROM schedules WHERE schedule_date BETWEEN ? AND ? AND is_done=0 "
+                "AND schedule_date < date('now') GROUP BY wd",
+                (start_date, end_date)
+            ).fetchall()
+
+    @staticmethod
+    def get_overdue_grouped_by_priority(start_date, end_date):
+        """按优先级分组统计拖延数，返回 [(priority, count), ...]"""
+        with _db() as conn:
+            return conn.execute(
+                "SELECT priority, COUNT(*) as c FROM schedules "
+                "WHERE schedule_date BETWEEN ? AND ? AND is_done=0 AND schedule_date < date('now') "
+                "GROUP BY priority ORDER BY priority",
+                (start_date, end_date)
+            ).fetchall()
+
 
 class DailyTaskDB:
 
@@ -309,7 +377,9 @@ class DailyTaskDB:
     def toggle_done(tid):
         with _db() as conn:
             conn.execute(
-                "UPDATE daily_tasks SET is_done = 1 - is_done WHERE id=?",
+                "UPDATE daily_tasks SET is_done = 1 - is_done, "
+                "completed_at = CASE WHEN is_done = 0 THEN datetime('now','localtime') ELSE NULL END, "
+                "updated_at = datetime('now','localtime') WHERE id=?",
                 (tid,)
             )
 
@@ -360,6 +430,67 @@ class DailyTaskDB:
     def clear_all():
         with _db() as conn:
             conn.execute("DELETE FROM daily_tasks")
+
+    # --- 拖延统计查询 ---
+
+    @staticmethod
+    def get_overdue(start_date, end_date, exclude_repeat=False):
+        """查询指定日期范围内到期未完成的任务"""
+        sql = ("SELECT * FROM daily_tasks WHERE task_date BETWEEN ? AND ? AND is_done=0 "
+               "AND task_date < date('now')")
+        params = [start_date, end_date]
+        if exclude_repeat:
+            sql += " AND (repeat IS NULL OR repeat = '')"
+        sql += " ORDER BY task_date"
+        with _db() as conn:
+            return conn.execute(sql, params).fetchall()
+
+    @staticmethod
+    def get_postponed():
+        """查询被推迟到未来的任务"""
+        with _db() as conn:
+            return conn.execute(
+                "SELECT * FROM daily_tasks WHERE task_date >= date('now') AND is_done=0 "
+                "AND created_at < datetime('now', '-1 day', 'localtime') "
+                "AND updated_at > created_at ORDER BY task_date"
+            ).fetchall()
+
+    @staticmethod
+    def get_overdue_grouped_by_date(start_date, end_date, exclude_repeat=False):
+        """按日期分组统计到期未完成数"""
+        sql = ("SELECT task_date as d, COUNT(*) as c FROM daily_tasks "
+               "WHERE task_date BETWEEN ? AND ? AND is_done=0 AND task_date < date('now')")
+        params = [start_date, end_date]
+        if exclude_repeat:
+            sql += " AND (repeat IS NULL OR repeat = '')"
+        sql += " GROUP BY task_date ORDER BY task_date"
+        with _db() as conn:
+            return conn.execute(sql, params).fetchall()
+
+    @staticmethod
+    def get_overdue_grouped_by_weekday(start_date, end_date, exclude_repeat=False):
+        """按星期几分组统计拖延数"""
+        sql = ("SELECT CAST(strftime('%w', task_date) AS INTEGER) as wd, COUNT(*) as c "
+               "FROM daily_tasks WHERE task_date BETWEEN ? AND ? AND is_done=0 "
+               "AND task_date < date('now')")
+        params = [start_date, end_date]
+        if exclude_repeat:
+            sql += " AND (repeat IS NULL OR repeat = '')"
+        sql += " GROUP BY wd"
+        with _db() as conn:
+            return conn.execute(sql, params).fetchall()
+
+    @staticmethod
+    def get_overdue_grouped_by_priority(start_date, end_date, exclude_repeat=False):
+        """按优先级分组统计拖延数"""
+        sql = ("SELECT priority, COUNT(*) as c FROM daily_tasks "
+               "WHERE task_date BETWEEN ? AND ? AND is_done=0 AND task_date < date('now')")
+        params = [start_date, end_date]
+        if exclude_repeat:
+            sql += " AND (repeat IS NULL OR repeat = '')"
+        sql += " GROUP BY priority ORDER BY priority"
+        with _db() as conn:
+            return conn.execute(sql, params).fetchall()
 
 
 class CheckinDB:
@@ -508,6 +639,45 @@ class CheckinDB:
         with _db() as conn:
             conn.execute("DELETE FROM checkins")
             conn.execute("DELETE FROM checkin_items")
+
+    # --- 拖延统计查询 ---
+
+    @staticmethod
+    def get_overdue(start_date, end_date, exclude_repeat=False):
+        """查询指定日期范围内到期未完成的打卡"""
+        sql = ("SELECT * FROM checkins WHERE checkin_date BETWEEN ? AND ? AND status=0 "
+               "AND checkin_date < date('now')")
+        params = [start_date, end_date]
+        if exclude_repeat:
+            sql += " AND (repeat IS NULL OR repeat = '')"
+        sql += " ORDER BY checkin_date"
+        with _db() as conn:
+            return conn.execute(sql, params).fetchall()
+
+    @staticmethod
+    def get_overdue_grouped_by_date(start_date, end_date, exclude_repeat=False):
+        """按日期分组统计到期未完成数"""
+        sql = ("SELECT checkin_date as d, COUNT(*) as c FROM checkins "
+               "WHERE checkin_date BETWEEN ? AND ? AND status=0 AND checkin_date < date('now')")
+        params = [start_date, end_date]
+        if exclude_repeat:
+            sql += " AND (repeat IS NULL OR repeat = '')"
+        sql += " GROUP BY checkin_date ORDER BY checkin_date"
+        with _db() as conn:
+            return conn.execute(sql, params).fetchall()
+
+    @staticmethod
+    def get_overdue_grouped_by_weekday(start_date, end_date, exclude_repeat=False):
+        """按星期几分组统计拖延数"""
+        sql = ("SELECT CAST(strftime('%w', checkin_date) AS INTEGER) as wd, COUNT(*) as c "
+               "FROM checkins WHERE checkin_date BETWEEN ? AND ? AND status=0 "
+               "AND checkin_date < date('now')")
+        params = [start_date, end_date]
+        if exclude_repeat:
+            sql += " AND (repeat IS NULL OR repeat = '')"
+        sql += " GROUP BY wd"
+        with _db() as conn:
+            return conn.execute(sql, params).fetchall()
 
 
 class DiaryDB:

@@ -4,11 +4,12 @@
 
 ## 功能特性
 
-- **日程管理** — 日历视图创建/编辑日程，支持时间范围、地点、优先级（1-3级）
+- **日程管理** — 日历视图创建/编辑日程，支持时间范围、地点、优先级（1-3级），倒计时提醒覆盖所有优先级
 - **每日任务** — 按天管理任务，支持每日/工作日/周末等重复模式
 - **打卡追踪** — 自定义打卡项目，按日记录习惯养成进度
 - **我的日记** — 带心情和天气记录的日记本，支持密码保护与安全问题找回
 - **数据统计** — 概览仪表盘与趋势图表，直观了解个人效率
+- **拖延统计** — 分析拖延习惯，支持到期未完成与推迟任务两类统计，含趋势环比对比、智能洞察、图表联动筛选、明细表格（重复项自动合并）
 - **整体态势** — 跨模块数据汇总视图
 - **系统设置** — 开机自启、通知提醒、数据导入导出、备份恢复、隐私保护
 
@@ -32,14 +33,15 @@
 ├── database.py            # SQLite 数据库层（5 张表）
 ├── requirements.txt       # Python 依赖
 ├── SchedulePlanner.spec   # PyInstaller 打包配置
-├── views/                 # UI 视图模块
-│   ├── main_window.py     #   主窗口（侧边栏导航）
-│   ├── calendar_view.py   #   日程日历视图
-│   ├── task_view.py       #   每日任务视图
-│   ├── checkin_view.py    #   打卡追踪视图
-│   ├── diary_view.py      #   日记视图
-│   ├── stats_view.py      #   数据统计视图
-│   └── all_tasks_view.py  #   整体态势视图
+├── views/                       # UI 视图模块
+│   ├── main_window.py           #   主窗口（侧边栏导航）
+│   ├── calendar_view.py         #   日程日历视图
+│   ├── task_view.py             #   每日任务视图
+│   ├── checkin_view.py          #   打卡追踪视图
+│   ├── diary_view.py            #   日记视图
+│   ├── stats_view.py            #   数据统计视图
+│   ├── procrastination_view.py  #   拖延统计视图
+│   └── all_tasks_view.py        #   整体态势视图
 ├── utils/                 # 工具模块
 │   ├── app_settings.py    #   设置管理 + 开机自启
 │   ├── backup.py          #   自动/手动备份
@@ -99,47 +101,39 @@ pyinstaller SchedulePlanner.spec
 
 日程管理：
 
-![image-20260523160956433](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231610572.png)
+![image-20260524132655373](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605241326427.png)
 
 每日任务：
 
-![image-20260523161132195](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231611305.png)
+![image-20260524132718965](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605241327022.png)
 
 打卡追踪：
 
-![image-20260523161144752](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231611837.png)
+![image-20260524132733464](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605241327510.png)
 
 整体态势：
 
-![image-20260523161217877](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231612978.png)
+![image-20260524132753690](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605241327739.png)
 
 数据统计：
 
-![image-20260523161240733](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231612805.png)
+![image-20260524132810600](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605241328652.png)
+
+拖延统计：
+
+![image-20260524132617692](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605241326762.png)
 
 我的日记：
 
-![image-20260523161318140](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231613217.png)
+![image-20260524132836109](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605241328157.png)
 
 系统设置：
 
-![image-20260523161338907](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231613004.png)
+![image-20260524132854818](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605241328866.png)
 
-![image-20260523161400168](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231614237.png)
+![image-20260524132914302](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605241329368.png)
 
-![image-20260523161425600](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605231614676.png)
-
-
-
-
-
-
-
-
-
-
-
-
+![image-20260524132931031](https://limg33.oss-cn-hangzhou.aliyuncs.com/note/202605241329077.png)
 
 ## License
 

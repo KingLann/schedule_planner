@@ -181,28 +181,31 @@ class CalendarView(tk.Frame):
             w.destroy()
 
         today = date.today()
-        # 获取当月范围内未来7天的紧急/重要日程
+        # 获取未来7天内未完成的日程
         end_date = today + timedelta(days=7)
         schedules = ScheduleDB.get_range(today.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d"))
 
-        urgent_important = [s for s in schedules if not s["is_done"] and s["priority"] >= 2]
-        urgent_important.sort(key=lambda s: (s["schedule_date"], s["start_time"] or ""))
+        pending = [s for s in schedules if not s["is_done"]]
+        pending.sort(key=lambda s: (s["schedule_date"], s["start_time"] or ""))
 
-        if not urgent_important:
-            tk.Label(self.remind_container, text="暂无紧急/重要日程",
+        if not pending:
+            tk.Label(self.remind_container, text="暂无待办日程",
                     font=("Microsoft YaHei UI", 9), bg=self.theme["card_bg"],
                     fg=self.theme["text_secondary"]).pack(anchor="w", pady=4)
             return
 
-        for s in urgent_important[:5]:
+        for s in pending[:5]:
             countdown = self._calc_countdown(s["schedule_date"], s["start_time"])
             if not countdown:
                 continue
 
-            is_urgent = s["priority"] >= 3
-            bg = "#fef2f2" if is_urgent else "#fffbeb"
-            fg = "#dc2626" if is_urgent else "#d97706"
-            icon = "🔥" if is_urgent else "⚡"
+            pri = s["priority"]
+            if pri >= 3:
+                bg, fg, icon = "#fef2f2", "#dc2626", "🔥"
+            elif pri >= 2:
+                bg, fg, icon = "#fffbeb", "#d97706", "⚡"
+            else:
+                bg, fg, icon = "#f0fdf4", "#16a34a", "📌"
 
             row = tk.Frame(self.remind_container, bg=bg, padx=4, pady=2)
             row.pack(fill=tk.X, pady=1)
